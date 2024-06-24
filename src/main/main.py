@@ -112,7 +112,7 @@ if mode != 'subscrape':
     # Converting features to pandas dataframe
     api_df = api_s.convertToDataFrame()
     html_df = html.convertToDataFrame()
-    bash_df = pd.read_csv(export_bash_csv, header=None, names=['Clone SSH URL','Number of Files','Depth of Files','Number of Contributors','Number of Commits','Number of Merges','Number of Branches','Number of Tags','Number of Links','Has README','Has SECURITY','Has Conduct','Has Contributing','Has ISSUE_TEMPLATE','Has PULL_TEMPLATE']) 
+    bash_df = pd.read_csv(export_bash_csv, header=None, names=['Clone SSH URL','Number of Files','Depth of Files','Number of Contributors','Number of Commits','Number of Merges','Number of Branches','Number of Tags','Number of Links','Has README','Has SECURITY','Has Conduct','Has Contributing','Has ISSUE_TEMPLATE','Has PULL_TEMPLATE','Last Commit']) 
 
     # Merging dataframes
     df = pd.merge(api_df, html_df, how='outer', on='Project URL')
