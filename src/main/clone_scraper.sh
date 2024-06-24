@@ -33,6 +33,10 @@ function scrape {
   directory=$(echo "$repo" | cut -d '/' -f 2 | rev | cut -c 5- | rev)
   cd $directory
 
+  # ANNIKA ADDED THIS LINE, GETS LAST COMMIT FROM CLONED REPO
+  git log > ./txt
+  last_commit=$(timestamp=$(LINE=$(grep -n "Author: " txt | head -1 | cut -d: -f1); LINE=$(( $LINE + 1 )); tail -n +$LINE txt | head -1 | cut -d" " -f4-); date -j -f "%a %b %d %T %Y %z" "$timestamp" +"%s")  
+  rm ./txt
   # Gets all files, including ones in sub-directories
   # Doesn't count anything in the .git directory, as those files are not modified or created by the users directly
   num_files=$(find . -type f 2> /dev/null | grep -vwE ".git" | wc -l | tr -d "[:blank:]")
@@ -135,7 +139,7 @@ function scrape {
   echo "$repo,${file_types[@]}" >> ./file_types/"$FILE_NAME"
   
   # Output data to the csv file
-  flock "$export_file" sh -c "echo '$repo,$num_files,$depth,$num_contributors,$num_commits,$num_merges,$num_branches,$num_tags,$num_links,$README,$SECURITY,$CONDUCT,$CONTRIBUTING,$ISSUE_TEMPLATE,$PULL_TEMPLATE' >> $export_file"
+  flock "$export_file" sh -c "echo '$repo,$num_files,$depth,$num_contributors,$num_commits,$num_merges,$num_branches,$num_tags,$num_links,$README,$SECURITY,$CONDUCT,$CONTRIBUTING,$ISSUE_TEMPLATE,$PULL_TEMPLATE,$last_commit' >> $export_file"
   
   # CODE LEFT HERE JUST IN CASE: 
   # Remove the cloned repository's directory

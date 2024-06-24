@@ -45,11 +45,13 @@ def get_github_repo_info(search_filter, page_number, access_token):
     num_repos = 0
 
     response = requests.get(api_url, headers=headers)
-
-    while response.status_code != 200:
+    num_fails = 0
+    while response.status_code != 200 and num_fails < 3:
         print(f"Request failed on page {page_number}")
+        print(f"Error code {response.status_code}")
         delay_seconds = 60  # default delay
         time.sleep(delay_seconds)
+        num_fails += 1
         response = requests.get(api_url, headers=headers)
 
     #response = requests.get(api_url)
