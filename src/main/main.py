@@ -6,6 +6,7 @@ import pandas as pd
 import argparse
 import subprocess
 import os
+import calendar
 import datetime
 import time
 from prompt_toolkit import prompt
@@ -19,6 +20,7 @@ parser = argparse.ArgumentParser(description='Scrapes features from Github proje
 parser.add_argument('mode', choices=['scrape', 'rescrape', 'subscrape'], help='Specify mode for scraping: scrape, rescrape, subscrape.')
 parser.add_argument('access_token', help='Github access token for authorization.')
 
+filename = prompt("Enter the name of the result file ([arg]_date format): ")
 # Parse command-line arguments
 args = parser.parse_args()
 
@@ -29,7 +31,9 @@ access_token = args.access_token
 # Making export file
 current_datetime = datetime.datetime.now()
 formatted_datetime = current_datetime.strftime("%Y-%m-%d_H%H-M%M-S%S")
-export_file = "features_" + formatted_datetime + ".xlsx"
+date = datetime.datetime.now(datetime.UTC)
+utc_time = calendar.timegm(date.utctimetuple())
+export_file = filename + "_" + formatted_datetime + ".xlsx" 
 
 # Function that prints execution time of code
 def exec_time(start_time, end_time):
@@ -120,9 +124,9 @@ if mode != 'subscrape':
 
     # Delete the files created by bash script
     os.remove(export_bash_csv)
-    if os.path.exists("clone_urls.txt"):
-      os.remove("clone_urls.txt")
-
+    
+    df['Execution Timestamp'] = utc_time
+    
     # Update excel file with new features
     export_to_excel()
     
@@ -149,7 +153,8 @@ elif mode == 'subscrape':
     # Converting features to pandas dataframe
     api_df = api.convertToDataFrame()
     df = api_df
-      
+    
+    df['Execution Timestamp'] = utc_time
     # export to excel file
     export_to_excel()
     
