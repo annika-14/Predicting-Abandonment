@@ -21,6 +21,7 @@ repo_license = []
 repo_archived = []
 repo_projects = []
 repo_homepage = []
+repo_homepage_exists = []
 repo_org = []
 repo_topics = []
 repo_ssh_url = []
@@ -78,14 +79,16 @@ def scrape_project(project_url, access_token):
     response = requests.get(api_url, headers=headers)
     if response.status_code == 404:
         return None
-
-    while response.status_code != 200:
+    
+    num_fails = 0
+    while response.status_code != 200 and num_fails < 3:
         print(f"Request failed")
         print(response.status_code)
         response_check = requests.get("https://api.github.com", headers=headers)
         if response_check.status_code == 403:
             delay_seconds = 60  # default delay
             time.sleep(delay_seconds)
+            num_fails += 1
             response = requests.get(api_url, headers=headers)
         else:
             return None
@@ -124,8 +127,10 @@ def scrape_project(project_url, access_token):
         homepage = repo_info.get("homepage", "No Homepage")
         if homepage is None or len(homepage) == 0:
            repo_homepage.append("None")
+           repo_homepage_exists.append("TRUE")
         else:
-            repo_homepage.append(homepage)      
+            repo_homepage.append(homepage)
+            repo_homepage_exists.append("FALSE")      
             
         
     else:
@@ -144,6 +149,7 @@ def convertToDataFrame():
                             'Clone SSH URL':repo_ssh_url,
                             'Organization':repo_org,
                             'Homepage':repo_homepage,
+                            'Has Homepage': repo_homepage_exists,
                             'Last Update':repo_last_update,
                             'Last Push':repo_last_push,
                             'Created Date':repo_created_date,

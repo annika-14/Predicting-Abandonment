@@ -63,6 +63,10 @@ def process_excel(file_path, step_values, timestamp):
     for day in step_values:
         print(f"{day}")
         df[f'Abandoned Within {day} Days'] = (timestamp - df['Last Commit']) > (day * 24 * 60 * 60)
+    df['Days Since Last Commit (now)'] = (timestamp - df['Last Commit']) / 60
+    df['Days Since Last Commit (collection))'] = (df['Execution Timestamp'] - df['Last Commit']) / 60
+
+
     
     
     # Save the modified DataFrame back to the Excel file

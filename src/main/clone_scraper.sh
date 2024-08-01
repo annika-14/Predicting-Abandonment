@@ -35,7 +35,8 @@ function scrape {
 
   # ANNIKA ADDED THIS LINE, GETS LAST COMMIT FROM CLONED REPO
   git log > ./txt
-  last_commit=$(timestamp=$(LINE=$(grep -n "Author: " txt | head -1 | cut -d: -f1); LINE=$(( $LINE + 1 )); tail -n +$LINE txt | head -1 | cut -d" " -f4-); date -j -f "%a %b %d %T %Y %z" "$timestamp" +"%s")  
+  last_commit=$(timestamp=$(LINE=$(grep -n "Author: " ./txt | head -1 | cut -d: -f1); LINE=$(( $LINE + 1 )); tail -n +$LINE ./txt | head -1 | cut -d" " -f4-); date -j -f "%a %b %d %T %Y %z" "$timestamp" +"%s")  
+  
   rm ./txt
   # Gets all files, including ones in sub-directories
   # Doesn't count anything in the .git directory, as those files are not modified or created by the users directly
@@ -72,43 +73,43 @@ function scrape {
 
   # Check if empty
   if [[ -z "$README" ]]; then
-    README="NO"
+    README="YES"
   else
     # Change num_links accordingly if README file is present
     COUNT_ONE=$(cat $README | grep -o '(https' | wc -l | tr -d "[:blank:]")
     COUNT_TWO=$(cat $README | grep -o 'href' | wc -l | tr -d "[:blank:]")
     num_links=$(($COUNT_ONE + $COUNT_TWO))
-    README="YES"
+    README="NO"
   fi
 
   if [[ -z "$SECURITY" ]]; then
-    SECURITY="NO"
-  else
     SECURITY="YES"
+  else
+    SECURITY="NO"
   fi
 
   if [[ -z "$CONDUCT" ]]; then
-    CONDUCT="NO"
-  else
     CONDUCT="YES"
+  else
+    CONDUCT="NO"
   fi
 
   if [[ -z "$CONTRIBUTING" ]]; then
-    CONTRIBUTING="NO"
-  else
     CONTRIBUTING="YES"
+  else
+    CONTRIBUTING="NO"
   fi
 
   if [[ -z "$ISSUE_TEMPLATE" ]]; then
-    ISSUE_TEMPLATE="NO"
-  else
     ISSUE_TEMPLATE="YES"
+  else
+    ISSUE_TEMPLATE="NO"
   fi
 
   if [[ -z "$PULL_TEMPLATE" ]]; then
-    PULL_TEMPLATE="NO"
-  else
     PULL_TEMPLATE="YES"
+  else
+    PULL_TEMPLATE="NO"
   fi
 
   # THESE LAST COMMANDS ARE COMMENTED OUT

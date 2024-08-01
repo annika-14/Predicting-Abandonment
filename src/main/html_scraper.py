@@ -10,6 +10,7 @@ import pandas as pd
 import time
 from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor
+import requests 
 
 # Chrome options to be added for Selenium Driver to speed up data collection speed
 # Includes: Headless mode and no images
@@ -36,6 +37,11 @@ chrome_options.add_argument("--blink-settings=imagesEnabled=false")
 projects = []
 
 # BELOW: Defining individual functions to isolate pages used to scrape features
+def save_html_to_file(content, url):
+    file_name = "log"
+    with open(file_name, 'a', encoding='utf-8') as file:
+        file.write(f"{url}\n")
+        
 
 # Scrapes pull requests page
 def scrape_prs(project_url, driver):
@@ -50,6 +56,7 @@ def scrape_prs(project_url, driver):
             EC.visibility_of_element_located((By.TAG_NAME, 'body'))
         )
         html = driver.page_source
+        save_html_to_file(html, pull_url)
         soup = BeautifulSoup(html,"html.parser")
 
         open_prs = soup.find(href=f"/{project}/pulls?q=is%3Aopen+is%3Apr")
@@ -80,6 +87,7 @@ def scrape_owner(project_url, driver):
     )
 
     html = driver.page_source
+    save_html_to_file(html, owner_url)
     soup = BeautifulSoup(html, "html.parser")
     #print(soup.prettify())
 
@@ -109,6 +117,7 @@ def scrape_owner(project_url, driver):
             )
             time.sleep(5)
             html = driver.page_source
+            save_html_to_file(html, owner_url)
             soup = BeautifulSoup(html, "html.parser")
             members = soup.find('span', class_='Counter js-profile-member-count')
             if members == None:
@@ -147,7 +156,8 @@ def scrape_insight(project_url, driver):
         EC.visibility_of_element_located((By.TAG_NAME, 'body'))
     )
 
-    html = driver.page_source
+    html = driver.page_source 
+    save_html_to_file(html, insight_url)
     soup = BeautifulSoup(html, "html.parser")
 
     active = soup.find_all('div', class_='mt-2')
@@ -184,6 +194,7 @@ def scrape_issues(project_url, driver):
         )
 
         html = driver.page_source
+        save_html_to_file(html, issue_url)
         soup = BeautifulSoup(html,"html.parser")
 
         if open_issues == None:
@@ -223,6 +234,7 @@ def scrape_issues(project_url, driver):
             EC.visibility_of_element_located((By.TAG_NAME, 'body'))
         )
         html = driver.page_source
+        save_html_to_file(html, project_url + '/labels')
         soup = BeautifulSoup(html,"html.parser")
         num_labels = soup.find('span', class_='js-labels-count')
         num_labels = num_labels.text.split()[0]
@@ -233,6 +245,7 @@ def scrape_issues(project_url, driver):
             EC.visibility_of_element_located((By.TAG_NAME, 'body'))
         )
         html = driver.page_source
+        save_html_to_file(html, project_url + '/milestones')
         soup = BeautifulSoup(html,"html.parser")
         num_milestones = soup.find('a', class_='btn-link selected').text.split()[0]
 
@@ -266,19 +279,21 @@ def scrape_page(project_url, driver):
 
     # Parse HTML
     html = driver.page_source
+    save_html_to_file(html, project_url)
     soup = BeautifulSoup(html,"html.parser")
 
     num_watches = soup.find(href=f"/{project}/watchers").find("strong").text
 
     creator = project.split('/')[0]
-    sponsored = "Yes" if soup.find(href=f"/sponsors/{creator}") != None else "No"
+    sponsored = "TRUE" if soup.find(href=f"/sponsors/{creator}") != None else "FALSE"
 
-    if sponsored == "Yes":
+    if sponsored == "TRUE":
         driver.get(f"https://github.com/sponsors/{creator}")
         WebDriverWait(driver, 10).until(
             EC.visibility_of_element_located((By.TAG_NAME, 'body'))
         )
         html = driver.page_source
+        save_html_to_file(html, "https://github.com/sponsors/{creator}")
         soup = BeautifulSoup(html,"html.parser")
 
         current_sponsors = soup.find(lambda tag: tag.name == 'h4' and 'Current sponsors' in tag.get_text())
@@ -316,6 +331,7 @@ def scrape_page(project_url, driver):
     )
 
     html = driver.page_source
+    save_html_to_file(html, workflow_url)
     soup = BeautifulSoup(html, "html.parser")
 
     workflow = soup.find(lambda tag: tag.name == 'strong' and 'workflow runs' in tag.get_text())
@@ -334,6 +350,7 @@ def scrape_page(project_url, driver):
     )
 
     html = driver.page_source
+    save_html_to_file(html, dependent_url)
     soup = BeautifulSoup(html, "html.parser")
 
     dependents = soup.find('a', class_='btn-link selected')
@@ -345,25 +362,41 @@ def scrape_page(project_url, driver):
 
     return project_features
 
+def is_repo_empty(repo_url):
+    api_url = f"https://api.github.com/repos/{repo_url[19:]}/commits"
+    response = requests.get(api_url)
+    
+    if response.status_code == 409:
+        return True  # Repository is empty
+    return False  # Repository is non-empty
 
-# Define function to be used to scrape each of the above pages and combine their results
 def scrape_project(project_url):
+    if is_repo_empty(project_url):
+        print(f"Repository {project_url} is empty.")
+        return [project_url, "Empty Repository"]
+# Define function to be used to scrape each of the above pages and combine their result
     project = [project_url]
 
     driver = webdriver.Chrome(options=chrome_options)
     prs = scrape_prs(project_url, driver)
     time.sleep(1)
+    driver = webdriver.Chrome(options=chrome_options)
     owner = scrape_owner(project_url, driver)
     time.sleep(1)
+    driver = webdriver.Chrome(options=chrome_options)
     insight = scrape_insight(project_url, driver)
     time.sleep(1)
+    driver = webdriver.Chrome(options=chrome_options)
     issues = scrape_issues(project_url, driver)
     time.sleep(1)
+    driver = webdriver.Chrome(options=chrome_options)
     page = scrape_page(project_url, driver)
 
     driver.quit()
 
     project = project + prs + owner + insight + issues + page
+    print(f"PROJECT: {project[0]}")
+    print(" ".join(map(str, project)))    
     return project
 
 
