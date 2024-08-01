@@ -50,6 +50,19 @@ def confirm_step_values(start_day, end_day, step_value):
             except ValueError as e:
                 print(e)
 
+def clean_excel(file_path):
+    df = pd.read_excel(file_path)
+
+    initial_row_count = len(df)
+    df_cleaned = df.dropna()
+    blanks_count = initial_row_count - len(df_cleaned)
+
+    cleaned_file_path = os.path.splitext(file_path)[0] + "_cleaned.xlsx"
+    df_cleaned.to_excel(cleaned_file_path, index=False)
+    print(f"Cleaned data saved to {cleaned_file_path}")
+    print(f"Number of rows with blanks removed: {blanks_count}")
+
+
 def process_excel(file_path, step_values, timestamp):
     # Read the Excel file
     df = pd.read_excel(file_path)
@@ -57,14 +70,19 @@ def process_excel(file_path, step_values, timestamp):
     # Check if the required column exists
     if "Last Commit" not in df.columns:
         raise KeyError("Column 'Last Commit' does not exist in the Excel file.")
+    if "Execution Timestamp" not in df.columns:
+        raise KeyError("Column 'Execution Timestamp' does not exist in the Excel file.")
     
+
+
     
     # Convert days to seconds and add a new column for each day
     for day in step_values:
         print(f"{day}")
         df[f'Abandoned Within {day} Days'] = (timestamp - df['Last Commit']) > (day * 24 * 60 * 60)
     df['Days Since Last Commit (now)'] = (timestamp - df['Last Commit']) / 60
-    df['Days Since Last Commit (collection))'] = (df['Execution Timestamp'] - df['Last Commit']) / 60
+    df['Days Since Last Commit (time of collection))'] = (df['Execution Timestamp'] - df['Last Commit']) / 60
+
 
 
     
@@ -88,23 +106,29 @@ if __name__ == "__main__":
         print(e)
         exit(1)
     
-    # Get the current time and convert it to a Unix timestamp
-    timestamp = int(datetime.now().timestamp())
+    mode = prompt("Would you like to clean a file or add post-processing columns? (clean/process)")
+    if mode == "clean":
+        clean_excel(args.file)
     
-    # Get and confirm step values with error checking
-    while True:
+
+    else:
+        # Get the current time and convert it to a Unix timestamp
+        timestamp = int(datetime.now().timestamp())
+        
+        # Get and confirm step values with error checking
+        while True:
+            try:
+                start_day = int(input("Enter the beginning day (positive integer): "))
+                end_day = int(input("Enter the end day (positive integer, equal or larger to beginning day): "))
+                step_value = int(input("Enter the step value (positive integer greater or equal to 1): "))
+                validate_range(start_day, end_day, step_value)
+                step_values = confirm_step_values(start_day, end_day, step_value)
+                break
+            except ValueError as e:
+                print(e)
+        
+        # Process the Excel file with the confirmed step values and timestamp
         try:
-            start_day = int(input("Enter the beginning day (positive integer): "))
-            end_day = int(input("Enter the end day (positive integer, equal or larger to beginning day): "))
-            step_value = int(input("Enter the step value (positive integer greater or equal to 1): "))
-            validate_range(start_day, end_day, step_value)
-            step_values = confirm_step_values(start_day, end_day, step_value)
-            break
-        except ValueError as e:
-            print(e)
-    
-    # Process the Excel file with the confirmed step values and timestamp
-    try:
-        process_excel(args.file, step_values, timestamp)
-    except Exception as e:
-        print(f"An error occurred while processing the Excel file: {e}")
+            process_excel(args.file, step_values, timestamp)
+        except Exception as e:
+            print(f"An error occurred while processing the Excel file: {e}")
