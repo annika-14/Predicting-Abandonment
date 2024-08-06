@@ -73,43 +73,43 @@ function scrape {
 
   # Check if empty
   if [[ -z "$README" ]]; then
-    README="YES"
+    README="NO"
   else
     # Change num_links accordingly if README file is present
     COUNT_ONE=$(cat $README | grep -o '(https' | wc -l | tr -d "[:blank:]")
     COUNT_TWO=$(cat $README | grep -o 'href' | wc -l | tr -d "[:blank:]")
     num_links=$(($COUNT_ONE + $COUNT_TWO))
-    README="NO"
+    README="YES"
   fi
 
   if [[ -z "$SECURITY" ]]; then
-    SECURITY="YES"
-  else
     SECURITY="NO"
+  else
+    SECURITY="YES"
   fi
 
   if [[ -z "$CONDUCT" ]]; then
-    CONDUCT="YES"
-  else
     CONDUCT="NO"
+  else
+    CONDUCT="YES"
   fi
 
   if [[ -z "$CONTRIBUTING" ]]; then
-    CONTRIBUTING="YES"
-  else
     CONTRIBUTING="NO"
+  else
+    CONTRIBUTING="YES"
   fi
 
   if [[ -z "$ISSUE_TEMPLATE" ]]; then
-    ISSUE_TEMPLATE="YES"
-  else
     ISSUE_TEMPLATE="NO"
+  else
+    ISSUE_TEMPLATE="YES"
   fi
 
   if [[ -z "$PULL_TEMPLATE" ]]; then
-    PULL_TEMPLATE="YES"
-  else
     PULL_TEMPLATE="NO"
+  else
+    PULL_TEMPLATE="YES"
   fi
 
   # THESE LAST COMMANDS ARE COMMENTED OUT
