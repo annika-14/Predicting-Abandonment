@@ -92,10 +92,10 @@ def get_github_repo_info(search_filter, page_number, access_token):
             homepage = repo_info.get("homepage", "No Homepage")
             if homepage is None or len(homepage) == 0:
                repo_homepage.append("None")
-               repo_homepage_exists.append("TRUE")
+               repo_homepage_exists.append("FALSE")
             else:
                 repo_homepage.append(homepage)
-                repo_homepage_exists.append("FALSE")
+                repo_homepage_exists.append("TRUE")
 
 
     else:

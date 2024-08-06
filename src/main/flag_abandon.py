@@ -2,6 +2,8 @@ import argparse
 import os
 import pandas as pd
 from datetime import datetime
+from prompt_toolkit import prompt
+from prompt_toolkit.completion import PathCompleter
 
 def validate_file_path(file_path):
     # Check if the file exists
@@ -62,6 +64,36 @@ def clean_excel(file_path):
     print(f"Cleaned data saved to {cleaned_file_path}")
     print(f"Number of rows with blanks removed: {blanks_count}")
 
+def change_date(row, current_timestamp):
+    print("made it to date")
+    # Convert 'Last Update' to Unix timestamp and calculate days since last update
+    last_update_dt = datetime.strptime(row['Last Update'], "%Y-%m-%dT%H:%M:%SZ")
+    row['Days Since Last Update'] = round((current_timestamp - last_update_dt.timestamp()) / (60 * 60 * 24), 2)
+    
+    # Convert 'Last Push' to Unix timestamp and calculate days since last push
+    last_push_dt = datetime.strptime(row['Last Push'], "%Y-%m-%dT%H:%M:%SZ")
+    row['Days Since Last Push'] = round((current_timestamp - last_push_dt.timestamp()) / (60 * 60 * 24), 2)
+    
+    # Convert 'Created Date' to Unix timestamp and calculate repo age in days
+    created_date_dt = datetime.strptime(row['Created Date'], "%Y-%m-%dT%H:%M:%SZ")
+    row['Repo Age (Days)'] = round((current_timestamp - created_date_dt.timestamp()) / (60 * 60 * 24), 2)
+    
+    return row
+
+def remove_k(row):
+    print("made it to k")
+    columns_to_check = ['Followers of Owner', 'Members of Owner', 'Repos of Owner', 'Number of Watches']
+    for col in columns_to_check:
+        print(f"{col}")
+        value = row[col]
+        if isinstance(value, str) and 'k' in value:
+            value = value.replace('k', '')
+            value = value.split('.')
+            converted_value = int(value[0]) * 1000 + int(value[1]) * 100
+            row[f'{col} (int)'] = converted_value
+        else:
+            row[f'{col} (int)'] = value  # No change if not a 'k' string
+    return row
 
 def process_excel(file_path, step_values, timestamp):
     # Read the Excel file
@@ -73,23 +105,28 @@ def process_excel(file_path, step_values, timestamp):
     if "Execution Timestamp" not in df.columns:
         raise KeyError("Column 'Execution Timestamp' does not exist in the Excel file.")
     
-
-
-    
     # Convert days to seconds and add a new column for each day
     for day in step_values:
         print(f"{day}")
         df[f'Abandoned Within {day} Days'] = (timestamp - df['Last Commit']) > (day * 24 * 60 * 60)
-    df['Days Since Last Commit (now)'] = (timestamp - df['Last Commit']) / 60
-    df['Days Since Last Commit (time of collection))'] = (df['Execution Timestamp'] - df['Last Commit']) / 60
+    df['Days Since Last Commit (now)'] = (timestamp - df['Last Commit']) / (24 * 60 * 60)
+    df['Days Since Last Commit (time of collection))'] = (df['Execution Timestamp'] - df['Last Commit']) / (24 * 60 * 60)
 
 
+    # Parse the date columns into day values, add them as new columns
+    df = df.apply(change_date, axis=1, current_timestamp=timestamp)
 
-    
-    
+    # get rid of k for thousands
+    # Followers of Owner , Members of Owner, Repos of Owner , Number of Watches
+    df = df.apply(remove_k, axis=1)
+
+    print("done")
     # Save the modified DataFrame back to the Excel file
-    df.to_excel(file_path, index=False)
-    print(f"Processed data saved to {file_path}")
+    df.to_excel(file_path + "_processed", index=False)
+
+    processed_file_path = os.path.splitext(file_path)[0] + "_processed.xlsx"
+    df_cleaned.to_excel(processed_file_path, index=False)
+    print(f"Processed data saved to {processed_file_path}")
 
 if __name__ == "__main__":
     # Argument parser setup
@@ -106,7 +143,7 @@ if __name__ == "__main__":
         print(e)
         exit(1)
     
-    mode = prompt("Would you like to clean a file or add post-processing columns? (clean/process)")
+    mode = prompt("Would you like to clean a file or add post-processing columns? (clean/process): ")
     if mode == "clean":
         clean_excel(args.file)
     
